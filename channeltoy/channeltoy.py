@@ -9,6 +9,32 @@ from scipy import optimize
 import statistics as st
 
 
+def solve_timestep_differencer(self,z_future,z_downstream,z_past,dt,dx,U,K,A,m,d):
+    """Solves the transient equations
+    E = K A^m S^n
+    dz/dt = U - E
+    dz/dt = U - K A^m S^n
+    (z^j+1-z^j)/dt = U - K A^m ((z_i^j+1-z_i-1^j+1)/dx)^n
+    (z^j+1-z^j)/dt = U - K A^m ((z_i^j+1-z_i-1^j+1)/dx)^n
+
+    we use upslope values of K, U, A for the discretization
+
+    Args:
+        uses all data members, no args
+
+    Returns:
+        Overwrites the elevation
+
+    Author:
+        Simon M Mudd
+
+    Date:
+        18/08/2020
+    """
+
+    difference = U - K*A**m * ( (z_future - z_downstream)/dx )**n - z_future-z_past/dt
+    return difference
+
 
 def axis_styler(ax,axis_style="Normal"):
     """This sets the line width and fonts on the axes.
@@ -249,6 +275,33 @@ class channeltoy():
             z[i] = z[i-1]+(self.x_data[i]-self.x_data[i-1])*term3[i]
         self.z_data = z
 
+
+
+    def solve_timestep(self,z_min,z_max,z_downstream,z_past,dt,dx,U,K,A,m,d):
+        """Solves the transient equations
+        E = K A^m S^n
+        dz/dt = U - E
+        dz/dt = U - K A^m S^n
+        (z^j+1-z^j)/dt = U - K A^m ((z_i^j+1-z_i-1^j+1)/dx)^n
+        (z^j+1-z^j)/dt = U - K A^m ((z_i^j+1-z_i-1^j+1)/dx)^n
+
+        we use upslope values of K, U, A for the discretization
+
+        Args:
+            uses all data members, no args
+
+        Returns:
+            Overwrites the elevation
+
+        Author:
+            Simon M Mudd
+
+        Date:
+            18/08/2020
+        """
+
+        z_future = optimize.toms748(solve_timestep_differencer,z_min,z_max,args=(z_downstream,z_past,dt,dx,U,K,A,m,d))
+        return difference_future
 
     def plot_ss_channel(self,show_figure = False, print_to_file = True, filename = "channel_profile.png"):
         """This prints the channel profile
