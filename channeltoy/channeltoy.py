@@ -9,15 +9,20 @@ from scipy import optimize
 import statistics as st
 
 
-def solve_timestep_differencer(self,z_future,z_downstream,z_past,dt,dx,U,K,A,m,d):
+def solve_timestep_differencer(z_future,z_downstream,z_past,dt,dx,U,K,A,m,n):
     """Solves the transient equations
-    E = K A^m S^n
-    dz/dt = U - E
-    dz/dt = U - K A^m S^n
-    (z^j+1-z^j)/dt = U - K A^m ((z_i^j+1-z_i-1^j+1)/dx)^n
-    (z^j+1-z^j)/dt = U - K A^m ((z_i^j+1-z_i-1^j+1)/dx)^n
-
-    we use upslope values of K, U, A for the discretization
+        E = K A^m S^n
+        dz/dt = U - E
+        dz/dt = U - K A^m S^n
+        (z^j+1-z^j)/dt = U - K A^m ((z_i^j+1-z_i-1^j+1)/dx)^n
+        We move all terms to one side:
+        0 = U - K A^m ((z_i^j+1-z_i-1^j+1)/dx)^n - (z^j+1-z^j)/dt
+        we then assume this is a function
+        z_predict = U - K A^m ((z_i^j+1-z_i-1^j+1)/dx)^n - (z^j+1-z^j)/dt
+        and use a root finding algorithm to solve.
+        We use Newton's method if n = 1 and the toms748 algorithm if n != 1.
+        tom's is faster and gauranteed to converge, but does not work if function is not differentiable 4 times.
+        we use upslope values of K, U, A for the discretization
 
     Args:
         uses all data members, no args
@@ -32,8 +37,10 @@ def solve_timestep_differencer(self,z_future,z_downstream,z_past,dt,dx,U,K,A,m,d
         18/08/2020
     """
 
-    difference = U - K*A**m * ( (z_future - z_downstream)/dx )**n - z_future-z_past/dt
+    difference = U - K*A**m * ( (z_future - z_downstream)/dx )**n - (z_future-z_past)/dt
     return difference
+
+
 
 
 def axis_styler(ax,axis_style="Normal"):
@@ -194,6 +201,7 @@ class channeltoy():
             18/08/2020
         """
         A_locs = np.power(np.subtract(X_0,self.x_data),rho)
+        self.A_data = A_locs
         return A_locs
 
     def set_K_values(self,K = 0.000005):
@@ -213,6 +221,7 @@ class channeltoy():
         """
         print("K is: "+str(K))
         K_vals = np.full_like(self.x_data,K,dtype=float)
+        self.K_data = K_vals
         return K_vals
 
     def set_U_values(self,U = 0.0001):
@@ -232,6 +241,7 @@ class channeltoy():
         """
         print("U is: "+str(U))
         U_vals = np.full_like(self.x_data,U,dtype=float)
+        self.U_data = U_vals
         return U_vals
 
     def solve_steady_state_elevation(self,base_level = 0):
@@ -257,6 +267,9 @@ class channeltoy():
             18/08/2020
         """
 
+        print("The U in the first cell is:")
+        print(self.U_data[0])
+
         # Please forgive me, but I am going to do this in a
         yoyoma = range(1,self.x_data.size)
         print("Range is:")
@@ -277,16 +290,20 @@ class channeltoy():
 
 
 
-    def solve_timestep(self,z_min,z_max,z_downstream,z_past,dt,dx,U,K,A,m,d):
+    def solve_timestep_point(self,z_min,z_max,z_downstream,z_past,dt,dx,U,K,A,m,n):
         """Solves the transient equations
         E = K A^m S^n
         dz/dt = U - E
         dz/dt = U - K A^m S^n
         (z^j+1-z^j)/dt = U - K A^m ((z_i^j+1-z_i-1^j+1)/dx)^n
-        (z^j+1-z^j)/dt = U - K A^m ((z_i^j+1-z_i-1^j+1)/dx)^n
-
+        We move all terms to one side:
+        0 = U - K A^m ((z_i^j+1-z_i-1^j+1)/dx)^n - (z^j+1-z^j)/dt
+        we then assume this is a function
+        z_predict = U - K A^m ((z_i^j+1-z_i-1^j+1)/dx)^n - (z^j+1-z^j)/dt
+        and use a root finding algorithm to solve.
+        We use Newton's method if n = 1 and the toms748 algorithm if n != 1.
+        tom's is faster and gauranteed to converge, but does not work if function is not differentiable 4 times.
         we use upslope values of K, U, A for the discretization
-
         Args:
             uses all data members, no args
 
@@ -300,8 +317,111 @@ class channeltoy():
             18/08/2020
         """
 
-        z_future = optimize.toms748(solve_timestep_differencer,z_min,z_max,args=(z_downstream,z_past,dt,dx,U,K,A,m,d))
-        return difference_future
+        if n == 1:
+            z_future = optimize.newton(solve_timestep_differencer,z_past,args=(z_downstream,z_past,dt,dx,U,K,A,m,n))
+        else:
+            z_future = optimize.toms748(solve_timestep_differencer,z_min,z_max,args=(z_downstream,z_past,dt,dx,U,K,A,m,n))
+
+        #print("Z_future is: ")
+        #print(z_future)
+
+        return z_future
+
+
+    def solve_timestep(self, base_level= 0,dt = 1):
+        """Solves the transient equations
+        E = K A^m S^n
+        dz/dt = U - E
+        dz/dt = U - K A^m S^n
+        (z^j+1-z^j)/dt = U - K A^m ((z_i^j+1-z_i-1^j+1)/dx)^n
+        We move all terms to one side:
+        0 = U - K A^m ((z_i^j+1-z_i-1^j+1)/dx)^n - (z^j+1-z^j)/dt
+        we then assume this is a function
+        z_predict = U - K A^m ((z_i^j+1-z_i-1^j+1)/dx)^n - (z^j+1-z^j)/dt
+        and use a root finding algorithm to solve.
+        We use Newton's method if n = 1 and the toms748 algorithm if n != 1.
+        tom's is faster and gauranteed to converge, but does not work if function is not differentiable 4 times.
+        we use upslope values of K, U, A for the discretization
+
+
+
+        Args:
+            base_level (float): The elevation at the outlet
+            dt (float): the timestep
+
+        Returns:
+            Overwrites the elevation, also returns the elevation array
+
+        Author:
+            Simon M Mudd
+
+        Date:
+            19/08/2020
+        """
+
+        z = self.z_data
+        z[0]= base_level
+
+        m = self.m_exponent
+        n = self.n_exponent
+
+        for i in range(1,self.x_data.size):
+        #for i in range(1,2):
+            A = self.A_data[i]
+            K = self.K_data[i]
+            U = self.U_data[i]
+            z_past = z[i]
+            z_downstream = z[i-1]
+            dx = self.x_data[i]-self.x_data[i-1]
+            z_min = z_past-dt*U*100
+            z_max = z_past+dt*U*100
+            z_future=self.solve_timestep_point(z_min,z_max,z_downstream,z_past,dt,dx,U,K,A,m,n)
+
+
+        self.z_data = z
+        return z
+
+
+    def transient_simulation(self,base_level = 0, dt = 1, start_time = 0, end_time = 100000, print_interval = 1000):
+        """Solves the transient evolution of a channel over a time period
+
+        Args:
+            base_level (float): The elevation at the outlet
+            dt (float): the timestep
+            start_time (float): the starting time
+            end_time (float): the ending time
+
+        Returns:
+            times (list, float): a list of the times when the elevation is recorded
+            elevations (list, float array): a list of the elevations at the recorded times
+            Overwrites the elevation as it goes
+
+        Author:
+            Simon M Mudd
+
+        Date:
+            19/08/2020
+        """
+
+        t_ime = np.arange(start_time, end_time+0.5*dt, dt, dtype=float)
+
+        times = []
+        elevations = []
+
+        for t in t_ime:
+            elev = self.solve_timestep(base_level= base_level,dt = dt)
+            if t%print_interval == 0:
+                print("Time is: "+str(t))
+                print("Elevation is ")
+                print(elev)
+                times.append(t)
+                elevations.append(elev)
+
+        return times,elevations
+
+
+
+
 
     def plot_ss_channel(self,show_figure = False, print_to_file = True, filename = "channel_profile.png"):
         """This prints the channel profile
@@ -321,6 +441,9 @@ class channeltoy():
         Date:
             18/08/2020
         """
+
+        self.solve_steady_state_elevation()
+
         fig, ax = plt.subplots()
         ax.plot(self.x_data, self.z_data)
 
