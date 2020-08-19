@@ -21,7 +21,7 @@ def solve_timestep_differencer(z_future,z_downstream,z_past,dt,dx,U,K,A,m,n):
         z_predict = U - K A^m ((z_i^j+1-z_i-1^j+1)/dx)^n - (z^j+1-z^j)/dt
         and use a root finding algorithm to solve.
         We use Newton's method if n = 1 and the toms748 algorithm if n != 1.
-        tom's is faster and gauranteed to converge, but does not work if function is not differentiable 4 times.
+        tom's is faster and guaranteed to converge, but does not work if function is not differentiable 4 times.
         we use upslope values of K, U, A for the discretization
 
     Args:
@@ -302,7 +302,7 @@ class channeltoy():
         z_predict = U - K A^m ((z_i^j+1-z_i-1^j+1)/dx)^n - (z^j+1-z^j)/dt
         and use a root finding algorithm to solve.
         We use Newton's method if n = 1 and the toms748 algorithm if n != 1.
-        tom's is faster and gauranteed to converge, but does not work if function is not differentiable 4 times.
+        tom's is faster and guaranteed to converge, but does not work if function is not differentiable 4 times.
         we use upslope values of K, U, A for the discretization
         Args:
             uses all data members, no args
@@ -340,7 +340,7 @@ class channeltoy():
         z_predict = U - K A^m ((z_i^j+1-z_i-1^j+1)/dx)^n - (z^j+1-z^j)/dt
         and use a root finding algorithm to solve.
         We use Newton's method if n = 1 and the toms748 algorithm if n != 1.
-        tom's is faster and gauranteed to converge, but does not work if function is not differentiable 4 times.
+        tom's is faster and guaranteed to converge, but does not work if function is not differentiable 4 times.
         we use upslope values of K, U, A for the discretization
 
 
@@ -376,6 +376,7 @@ class channeltoy():
             z_min = z_past-dt*U*100
             z_max = z_past+dt*U*100
             z_future=self.solve_timestep_point(z_min,z_max,z_downstream,z_past,dt,dx,U,K,A,m,n)
+            z[i] = z_future
 
 
         self.z_data = z
