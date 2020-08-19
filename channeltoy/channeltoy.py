@@ -258,7 +258,7 @@ class channeltoy():
             uses all data members, no args
 
         Returns:
-            Overwrites the elevation
+            the elevations. Also overwrites the elevation data member
 
         Author:
             Simon M Mudd
@@ -267,26 +267,27 @@ class channeltoy():
             18/08/2020
         """
 
-        print("The U in the first cell is:")
-        print(self.U_data[0])
+        #print("The U in the first cell is:")
+        #print(self.U_data[0])
 
         # Please forgive me, but I am going to do this in a
         yoyoma = range(1,self.x_data.size)
-        print("Range is:")
-        print(yoyoma)
+        #print("Range is:")
+        #print(yoyoma)
 
         Apow = np.power(self.A_data,self.m_exponent)
         term1 = np.multiply(self.K_data,Apow)
         term2 = np.divide(self.U_data,term1)
         term3 = np.power(term2,(1/self.n_exponent))
-        print("Slope is:")
-        print(term3)
+        #print("Slope is:")
+        #print(term3)
 
-        z = self.z_data
+        z = np.copy(self.z_data)
         z[0]= base_level
         for i in range(1,self.x_data.size):
             z[i] = z[i-1]+(self.x_data[i]-self.x_data[i-1])*term3[i]
-        self.z_data = z
+        self.z_data = np.copy(z)
+        return z
 
 
 
@@ -359,7 +360,7 @@ class channeltoy():
             19/08/2020
         """
 
-        z = self.z_data
+        z = np.copy(self.z_data)
         z[0]= base_level
 
         m = self.m_exponent
@@ -379,7 +380,7 @@ class channeltoy():
             z[i] = z_future
 
 
-        self.z_data = z
+        self.z_data = np.copy(z)
         return z
 
 
@@ -417,18 +418,66 @@ class channeltoy():
                 print(elev)
                 times.append(t)
                 elevations.append(elev)
+            if t%5000 == 0:
+                print("Time is: "+str(t))
 
         return times,elevations
 
 
+    def plot_transient_channel(self,show_figure = False, print_to_file = True, filename = "transient_channel_profile.png", times = [], elevations = [], initial_elevation = [], final_elevation =[]):
+        """This prints the channel profile
+        Args:
+            show_figure (bool): If true, show figure
+            print_to_file (bool): If true, print to file
+            filename (string): Name of file to which the function prints
 
+        Returns:
+            Either a shown figure, a printed figure, or both
+
+        Author:
+            Simon M Mudd
+
+        Date:
+            18/08/2020
+        """
+
+        x_loc = self.x_data
+
+        fig, ax = plt.subplots()
+        if not final_elevation == []:
+            #print("Plotting final elevation")
+            #print(final_elevation)
+            ax.plot(self.x_data, final_elevation, label="Final steady state profile")
+
+        if not initial_elevation == []:
+            #print("Plotting initial elevation")
+            #print(initial_elevation)
+            ax.plot(self.x_data, initial_elevation, label="Initial steady state profile")
+
+        for i, t in enumerate(times):
+            print("Time is: "+str(t))
+            #print("Elevation is:")
+            #print(elevations[i])
+            ax.plot(self.x_data, elevations[i], label="Time = "+str(t))
+
+
+
+        plt.legend(loc='upper left')
+        ax.set(xlabel='distance from outlet (m)', ylabel='elevation (m)',
+           title='Channel profile')
+        ax.grid()
+        ax = axis_styler(ax,axis_style="Normal")
+
+        if print_to_file:
+            fig.savefig(filename)
+
+        if show_figure:
+            plt.show()
 
 
     def plot_ss_channel(self,show_figure = False, print_to_file = True, filename = "channel_profile.png"):
         """This prints the channel profile
         Args:
-            x (array): The array of x locations
-            z (array): The array of elevations
             show_figure (bool): If true, show figure
             print_to_file (bool): If true, print to file
             filename (string): Name of file to which the function prints
