@@ -19,7 +19,7 @@ def run_tests():
 
     yo.set_U_values(U = 0.0002)
     #yo.solve_timestep(base_level= 0,dt = 10)
-    times, elevations = yo.transient_simulation(base_level = 0, dt = 200, start_time = 0, end_time = 500001, print_interval = 50000)
+    times, elevations = yo.transient_simulation(base_level = 0, dt = 200, start_time = 0, end_time = 500001, print_interval = 250000)
 
     yo.set_U_values(U = 0.0001)
     initial_z = yo.solve_steady_state_elevation()
@@ -36,9 +36,12 @@ def run_tests():
 
     yo.plot_transient_channel(times = times, elevations = elevations, initial_elevation = initial_z, final_elevation =final_z)
 
+def run_tests2():
+    yo = ct.channeltoy(spacing=500, U = 0.0002,n=1.2)
 
+    yo.create_drainage_capture_channel(new_K = 0.000001, new_U = 0.0002, new_max_x = 10001,new_spacing = 550, new_X_0 = 10501, new_rho = 1.8, capture_location_fraction = 0.5)
 
 
 if __name__ == "__main__":
-    run_tests()
+    run_tests2()
 

@@ -244,6 +244,68 @@ class channeltoy():
         self.U_data = U_vals
         return U_vals
 
+    def create_drainage_capture_channel(self, new_K = 0.000005, new_U = 0.0001, new_max_x = 100000,new_spacing = 1000, new_X_0 = 10000, new_rho = 1.8, capture_location_fraction = 0.5):
+        """This splices two channels together to give an inital condition
+
+        Args:
+            uses all data members, no args
+
+        Returns:
+            the elevations. Also overwrites the elevation data member
+
+        Author:
+            Simon M Mudd
+
+        Date:
+            19/08/2020
+        """
+
+        # first we get the steady state elevations from one channel
+        self.solve_steady_state_elevation()
+
+        # now the second channel:
+        x_locs = np.arange(0,new_max_x,new_spacing)
+        K_vals = np.full_like(x_locs,new_K,dtype=float)
+        U_vals = np.full_like(x_locs,new_U,dtype=float)
+        A_vals = np.power(np.subtract(new_X_0,x_locs),new_rho)
+        z_vals = np.full_like(x_locs,0,dtype=float)
+
+        # solve for steady
+        Apow = np.power(A_vals,self.m_exponent)
+        term1 = np.multiply(K_vals,Apow)
+        term2 = np.divide(U_vals,term1)
+        term3 = np.power(term2,(1/self.n_exponent))
+
+        z = np.copy(z_vals)
+        z[0]= 0
+        for i in range(1,self.x_data.size):
+            z[i] = z[i-1]+(self.x_data[i]-self.x_data[i-1])*term3[i]
+        z_vals = np.copy(z)
+
+        # Now splice the two together
+        capture_location = new_max_x*capture_location_fraction
+
+        # This gets the index of the capture point
+        absolute_val_array = np.abs(x_locs - capture_location)
+        capture_index = np.argmin(absolute_val_array)
+
+        x_locs = x_locs[capture_index:]
+        K_vals = K_vals[capture_index:]
+        U_vals = U_vals[capture_index:]
+        A_vals = A_vals[capture_index:]
+        z_vals = z_vals[capture_index:]
+
+        print("Capture index is:"+str(capture_index))
+        print("X locations are:")
+        print(x_locs)
+
+        # okay, so the first node of these vectors corresponds to the final
+        # node of the existing channel. We need to update the elevations and
+        # areas to reflect this.
+
+
+
+
     def solve_steady_state_elevation(self,base_level = 0):
         """Solves the steady state equations
         E = K A^m S^n
@@ -266,14 +328,6 @@ class channeltoy():
         Date:
             18/08/2020
         """
-
-        #print("The U in the first cell is:")
-        #print(self.U_data[0])
-
-        # Please forgive me, but I am going to do this in a
-        yoyoma = range(1,self.x_data.size)
-        #print("Range is:")
-        #print(yoyoma)
 
         Apow = np.power(self.A_data,self.m_exponent)
         term1 = np.multiply(self.K_data,Apow)
