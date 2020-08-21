@@ -37,7 +37,7 @@ def run_tests():
     yo.plot_transient_channel(times = times, elevations = elevations, initial_elevation = initial_z, final_elevation =final_z)
 
 def run_tests2():
-    yo = ct.channeltoy(spacing=500, U = 0.0002,K = 0.00005,n=1.2)
+    yo = ct.channeltoy(spacing=500, U = 0.0002,K = 0.00005,n=1)
 
     yo.plot_channel(filename = "pre_channel_profile.png",show_area=True)
 
@@ -45,12 +45,15 @@ def run_tests2():
 
     yo.plot_channel(filename = "capture_channel_profile.png",show_area=True)
 
+    initial_z = yo.get_elevations()
+
     # Now run the transient channel
-    #times, elevations = yo.transient_simulation(base_level = 0, dt = 1, start_time = 0, end_time = 500001, print_interval = 250000)
+    times, elevations = yo.transient_simulation(base_level = 0, dt = 100, start_time = 0, end_time = 500001, print_interval = 250000)
 
 
+    final_z = yo.solve_steady_state_elevation()
 
-    #yo.plot_transient_channel(times = times, elevations = elevations, initial_elevation = initial_z, final_elevation =final_z)
+    yo.plot_transient_channel(times = times, elevations = elevations, initial_elevation = initial_z, final_elevation =final_z)
 
 
 if __name__ == "__main__":

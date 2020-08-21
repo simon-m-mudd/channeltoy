@@ -254,6 +254,21 @@ class channeltoy():
         self.U_data = U_vals
         return U_vals
 
+    def get_elevations(self):
+        """Getter function
+
+        Returns:
+            elevations (float): the current elevations in the model
+
+        Author:
+            Simon M Mudd
+
+        Date:
+            21/08/2020
+        """
+        return np.copy(self.z_data)
+
+
     def splice_drainage_capture_channel(self,x_locs,K_vals, U_vals, A_vals, z_vals, capture_location):
         """This splices two channels together to give an inital condition
 
@@ -289,9 +304,9 @@ class channeltoy():
         for i, x in enumerate(x_locs[1:]):
             x_locs_spacing.append(x_locs[i]-x_locs[i-1])
 
-        #print("Capture index is:"+str(capture_index))
-        #print("X locations are:")
-        #print(x_locs)
+        print("Capture index is:"+str(capture_index))
+        print("X locations are:")
+        print(x_locs)
 
         # okay, so the first node of these vectors corresponds to the final
         # node of the existing channel. We need to update the elevations and
@@ -302,6 +317,14 @@ class channeltoy():
 
         z_diff = z_vals[0]-z_capture_point
         z_vals = np.subtract(z_vals,z_diff)
+
+        print("\n\n\n\n===============")
+        print("old z")
+        print(self.z_data)
+        print("capture z")
+        print(z_vals)
+        print("===============\n\n\n\n")
+
         print("z lower is: "+str(z_vals[0]))
         print("z diff is: "+str(z_diff))
 
@@ -311,13 +334,13 @@ class channeltoy():
 
         x_diff = x_locs[0]-self.x_data[-1]
         x_vals = np.subtract(x_locs,x_diff)
-        #print("x lower is: "+str(x_locs[0]))
-        #print("x diff is: "+str(x_diff))
+        print("x lower is: "+str(x_locs[0]))
+        print("x diff is: "+str(x_diff))
 
 
-        #print("x capture point is: "+str(x_capture_point))
-        #print("new x is:")
-        #print(x_vals)
+        print("x capture point is: "+str(x_capture_point))
+        print("new x is:")
+        print(x_vals)
 
         new_A = np.copy(self.A_data)
         new_A = np.add(new_A,A_base)
@@ -375,8 +398,8 @@ class channeltoy():
 
         z = np.copy(z_vals)
         z[0]= 0
-        for i in range(1,self.x_data.size):
-            z[i] = z[i-1]+(self.x_data[i]-self.x_data[i-1])*term3[i]
+        for i in range(1,x_locs.size):
+            z[i] = z[i-1]+(x_locs[i]-x_locs[i-1])*term3[i]
         z_vals = np.copy(z)
 
         # Now splice the two together
@@ -441,6 +464,13 @@ class channeltoy():
         We use Newton's method if n = 1 and the toms748 algorithm if n != 1.
         tom's is faster and guaranteed to converge, but does not work if function is not differentiable 4 times.
         we use upslope values of K, U, A for the discretization
+
+        If n = 1 we can actually solve directly.
+        0 = U - K A^m ((z_f-z_ds)/dx) - (z_f-z_0)/dt
+        0 = U - K A^m z_f/dx + K A^m z_ds/dx - z_f/dt + z_0/dt
+        K A^m z_f/dx + z_f/dt = U + K A^m z_ds/dx + z_0/dt
+        z_f (K A^m/dx + 1/dt) = U + K A^m z_ds/dx + z_0/dt
+
         Args:
             uses all data members, no args
 
@@ -455,7 +485,9 @@ class channeltoy():
         """
 
         if n == 1:
-            z_future = optimize.newton(solve_timestep_differencer,z_past,args=(z_downstream,z_past,dt,dx,U,K,A,m,n))
+            #z_future = optimize.newton(solve_timestep_differencer,z_past,args=(z_downstream,z_past,dt,dx,U,K,A,m,n))
+            SP_term = (K*A**m)/dx
+            z_future = (U + SP_term*z_downstream/dx + z_past/dt)/(SP_term + 1/dt)
         else:
             z_future = optimize.toms748(solve_timestep_differencer,z_min,z_max,args=(z_downstream,z_past,dt,dx,U,K,A,m,n))
 
