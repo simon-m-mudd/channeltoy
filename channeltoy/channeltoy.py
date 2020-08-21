@@ -487,7 +487,7 @@ class channeltoy():
         if n == 1:
             #z_future = optimize.newton(solve_timestep_differencer,z_past,args=(z_downstream,z_past,dt,dx,U,K,A,m,n))
             SP_term = (K*A**m)/dx
-            z_future = (U + SP_term*z_downstream/dx + z_past/dt)/(SP_term + 1/dt)
+            z_future = (U + SP_term*z_downstream + z_past/dt)/(SP_term + 1/dt)
         else:
             z_future = optimize.toms748(solve_timestep_differencer,z_min,z_max,args=(z_downstream,z_past,dt,dx,U,K,A,m,n))
 
@@ -533,6 +533,9 @@ class channeltoy():
 
         m = self.m_exponent
         n = self.n_exponent
+
+        #print("Uplift is")
+        #print(self.U_data)
 
         for i in range(1,self.x_data.size):
         #for i in range(1,2):

@@ -48,7 +48,7 @@ def run_tests2():
     initial_z = yo.get_elevations()
 
     # Now run the transient channel
-    times, elevations = yo.transient_simulation(base_level = 0, dt = 100, start_time = 0, end_time = 500001, print_interval = 250000)
+    times, elevations = yo.transient_simulation(base_level = 0, dt = 20, start_time = 0, end_time = 500001, print_interval = 250000)
 
 
     final_z = yo.solve_steady_state_elevation()
