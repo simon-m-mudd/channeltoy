@@ -145,6 +145,21 @@ class channeltoy():
         self.K_data = self.set_K_values(K = K)
         self.U_data = self.set_U_values(U = U)
 
+        # Set the whole thing to steady state
+        self.solve_steady_state_elevation()
+
+
+    def print_data_members_to_screen():
+        """Prints the data members to screen
+
+
+        Author:
+            Simon M Mudd
+
+        Date:
+            21/08/2020
+        """
+
         print("m is: "+str(self.m_exponent)+" and n is: "+str(self.n_exponent))
         print("x locations are (m):")
         print(self.x_data)
@@ -156,11 +171,6 @@ class channeltoy():
         print(self.K_data)
         print("Uplift rates are (m/yr):")
         print(self.U_data)
-
-        self.solve_steady_state_elevation()
-
-        print("elevation at steady is")
-        print(self.z_data)
 
 
     def set_profile_locations_constant(self,minimum_x = 1000, maximum_x = 100000,spacing = 1000):
@@ -290,15 +300,14 @@ class channeltoy():
         x_capture_point = self.x_data[-1]
         A_base = A_vals[0]
 
-
         z_diff = z_vals[0]-z_capture_point
         z_vals = np.subtract(z_vals,z_diff)
-        #print("z lower is: "+str(z_vals[0]))
-        #print("z diff is: "+str(z_diff))
+        print("z lower is: "+str(z_vals[0]))
+        print("z diff is: "+str(z_diff))
 
-        #print("z capture: "+str(z_capture_point))
-        #print("new z is: ")
-        #print(z_vals)
+        print("z capture: "+str(z_capture_point))
+        print("new z is: ")
+        print(z_vals)
 
         x_diff = x_locs[0]-self.x_data[-1]
         x_vals = np.subtract(x_locs,x_diff)
@@ -325,15 +334,11 @@ class channeltoy():
         self.K_data = np.concatenate((self.K_data,K_vals[1:]),axis=None)
         self.A_data = np.concatenate((new_A[:-1],A_vals),axis=None)
 
-        #print(self.x_data)
-        #print(self.z_data)
-        #print(self.U_data)
-        #print(self.K_data)
-        #print(self.A_data)
-
-
-
-
+        print(self.x_data)
+        print(self.z_data)
+        print(self.U_data)
+        print(self.K_data)
+        print(self.A_data)
 
 
     def create_drainage_capture_channel(self, new_K = 0.000005, new_U = 0.0001, new_max_x = 100000,new_spacing = 1000, new_X_0 = 10000, new_rho = 1.8, capture_location_fraction = 0.5):
@@ -632,6 +637,51 @@ class channeltoy():
            title='Channel profile')
         ax.grid()
         ax = axis_styler(ax,axis_style="Normal")
+
+        if print_to_file:
+            fig.savefig(filename)
+
+        if show_figure:
+            plt.show()
+
+    def plot_channel(self,show_figure = False, print_to_file = True, filename = "channel_profile.png", show_area = False):
+        """This prints the channel profile
+        Args:
+            show_figure (bool): If true, show figure
+            print_to_file (bool): If true, print to file
+            filename (string): Name of file to which the function prints
+
+        Returns:
+            Either a shown figure, a printed figure, or both
+
+        Author:
+            Simon M Mudd
+
+        Date:
+            18/08/2020
+        """
+
+        fig, ax = plt.subplots()
+        ax.plot(self.x_data, self.z_data)
+
+
+
+        ax.set(xlabel='distance from outlet (m)', ylabel='elevation (m)',
+           title='Channel profile')
+
+        if show_area:
+            #print("A data is:")
+            #print(self.A_data)
+
+            ax_A = ax.twinx()
+            ax_A.fill_between(self.x_data, self.A_data, facecolor = "r",alpha=0.3, zorder=-1)
+            ax_A.set_ylabel(r'Drainage area, m$^2$')
+
+        ax.grid()
+        ax = axis_styler(ax,axis_style="Normal")
+
+
+
 
         if print_to_file:
             fig.savefig(filename)
