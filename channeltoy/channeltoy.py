@@ -244,6 +244,98 @@ class channeltoy():
         self.U_data = U_vals
         return U_vals
 
+    def splice_drainage_capture_channel(self,x_locs,K_vals, U_vals, A_vals, z_vals, capture_location):
+        """This splices two channels together to give an inital condition
+
+        Args:
+            uses all data members, no args
+
+        Returns:
+            the elevations. Also overwrites the elevation data member
+
+        Author:
+            Simon M Mudd
+
+        Date:
+            21/08/2020
+        """
+
+        # This gets the index of the capture point
+        #print("The x locations are:")
+        #print(x_locs)
+        #print("And the capture point is:"+str(capture_location))
+
+        absolute_val_array = np.abs(x_locs - capture_location)
+        capture_index = np.argmin(absolute_val_array)
+
+        x_locs = x_locs[capture_index:]
+        K_vals = K_vals[capture_index:]
+        U_vals = U_vals[capture_index:]
+        A_vals = A_vals[capture_index:]
+        z_vals = z_vals[capture_index:]
+
+        x_locs_spacing = []
+        x_locs_spacing.append(x_locs[1]-x_locs[0])
+        for i, x in enumerate(x_locs[1:]):
+            x_locs_spacing.append(x_locs[i]-x_locs[i-1])
+
+        #print("Capture index is:"+str(capture_index))
+        #print("X locations are:")
+        #print(x_locs)
+
+        # okay, so the first node of these vectors corresponds to the final
+        # node of the existing channel. We need to update the elevations and
+        # areas to reflect this.
+        z_capture_point = self.z_data[-1]
+        x_capture_point = self.x_data[-1]
+        A_base = A_vals[0]
+
+
+        z_diff = z_vals[0]-z_capture_point
+        z_vals = np.subtract(z_vals,z_diff)
+        #print("z lower is: "+str(z_vals[0]))
+        #print("z diff is: "+str(z_diff))
+
+        #print("z capture: "+str(z_capture_point))
+        #print("new z is: ")
+        #print(z_vals)
+
+        x_diff = x_locs[0]-self.x_data[-1]
+        x_vals = np.subtract(x_locs,x_diff)
+        #print("x lower is: "+str(x_locs[0]))
+        #print("x diff is: "+str(x_diff))
+
+
+        #print("x capture point is: "+str(x_capture_point))
+        #print("new x is:")
+        #print(x_vals)
+
+        new_A = np.copy(self.A_data)
+        new_A = np.add(new_A,A_base)
+
+        #print("Old A")
+        #print(self.A_data)
+        #print("Capture A")
+        #print(A_vals)
+
+        # Now concatenate
+        self.x_data = np.concatenate((self.x_data,x_vals[1:]),axis=None)
+        self.z_data = np.concatenate((self.z_data,z_vals[1:]),axis=None)
+        self.U_data = np.concatenate((self.U_data,U_vals[1:]),axis=None)
+        self.K_data = np.concatenate((self.K_data,K_vals[1:]),axis=None)
+        self.A_data = np.concatenate((new_A[:-1],A_vals),axis=None)
+
+        #print(self.x_data)
+        #print(self.z_data)
+        #print(self.U_data)
+        #print(self.K_data)
+        #print(self.A_data)
+
+
+
+
+
+
     def create_drainage_capture_channel(self, new_K = 0.000005, new_U = 0.0001, new_max_x = 100000,new_spacing = 1000, new_X_0 = 10000, new_rho = 1.8, capture_location_fraction = 0.5):
         """This splices two channels together to give an inital condition
 
@@ -285,23 +377,8 @@ class channeltoy():
         # Now splice the two together
         capture_location = new_max_x*capture_location_fraction
 
-        # This gets the index of the capture point
-        absolute_val_array = np.abs(x_locs - capture_location)
-        capture_index = np.argmin(absolute_val_array)
 
-        x_locs = x_locs[capture_index:]
-        K_vals = K_vals[capture_index:]
-        U_vals = U_vals[capture_index:]
-        A_vals = A_vals[capture_index:]
-        z_vals = z_vals[capture_index:]
-
-        print("Capture index is:"+str(capture_index))
-        print("X locations are:")
-        print(x_locs)
-
-        # okay, so the first node of these vectors corresponds to the final
-        # node of the existing channel. We need to update the elevations and
-        # areas to reflect this.
+        self.splice_drainage_capture_channel(x_locs,K_vals, U_vals, A_vals, z_vals, capture_location)
 
 
 

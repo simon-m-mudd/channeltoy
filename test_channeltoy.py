@@ -37,9 +37,9 @@ def run_tests():
     yo.plot_transient_channel(times = times, elevations = elevations, initial_elevation = initial_z, final_elevation =final_z)
 
 def run_tests2():
-    yo = ct.channeltoy(spacing=500, U = 0.0002,n=1.2)
+    yo = ct.channeltoy(spacing=500, U = 0.0002,K = 0.00001,n=1.2)
 
-    yo.create_drainage_capture_channel(new_K = 0.000001, new_U = 0.0002, new_max_x = 10001,new_spacing = 550, new_X_0 = 10501, new_rho = 1.8, capture_location_fraction = 0.5)
+    yo.create_drainage_capture_channel(new_K = 0.0001, new_U = 0.0002, new_max_x = 10001,new_spacing = 550, new_X_0 = 10501, new_rho = 1.8, capture_location_fraction = 0.5)
 
 
 if __name__ == "__main__":
