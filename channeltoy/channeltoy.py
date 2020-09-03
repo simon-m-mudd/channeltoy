@@ -623,7 +623,7 @@ class channeltoy():
         if not initial_elevation == []:
             #print("Plotting initial elevation")
             #print(initial_elevation)
-            ax.plot(self.x_data, initial_elevation, label="Initial steady state profile")
+            ax.plot(self.x_data, initial_elevation, label="Initial profile")
 
         for i, t in enumerate(times):
             print("Time is: "+str(t))
