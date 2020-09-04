@@ -6,7 +6,9 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 from scipy import optimize
+from scipy import integrate
 import statistics as st
+
 
 
 def solve_timestep_differencer(z_future,z_downstream,z_past,dt,dx,U,K,A,m,n):
@@ -131,16 +133,19 @@ class channeltoy():
     def __init__(self, m= 0.45,  n = 1, minimim_x = 0, maximum_x = 9001,spacing = 1000,
                  X_0 = 10000, rho = 1.8,
                  K = 0.000005,
-                 U = 0.0001):
+                 U = 0.0001,
+                 A_0 = 1):
 
         self.m_exponent = m
         self.n_exponent = n
+        self.A_0 = A_0
         self.x_data = self.set_profile_locations_constant(minimum_x = minimim_x,
                                                      maximum_x = maximum_x,
                                                      spacing = spacing)
         self.z_data = np.zeros_like(self.x_data,dtype=float)
         self.A_data = self.set_hack_area(X_0 = X_0,
                                          rho = rho)
+        self.chi_data = self.calculate_chi()
 
         self.K_data = self.set_K_values(K = K)
         self.U_data = self.set_U_values(U = U)
@@ -171,6 +176,39 @@ class channeltoy():
         print(self.K_data)
         print("Uplift rates are (m/yr):")
         print(self.U_data)
+
+
+    def calculate_chi(self):
+        """Calculates chi
+
+        Args:
+            A_0 (float): reference drainage area
+
+        Returns:
+            A numpy array with the channel locations in metres
+
+        Author:
+            Simon M Mudd
+
+        Date:
+            04/09/2020
+        """
+
+        theta = self.m_exponent/self.n_exponent
+
+        integrand = np.power( np.divide(self.A_0,self.A_data) , theta )
+
+        chi = np.zeros_like(integrand)
+        x_minimum = self.x_data[0]
+
+        # integrate using the trapezoid rule
+        for i,x_i in enumerate(self.x_data):
+            if i == 0:
+                chi[i] = 0
+            else:
+                chi[i] = chi[i-1]+(self.x_data[i]-self.x_data[i-1])*(0.5*(integrand[i] + integrand[i-1]))
+
+        return chi
 
 
     def set_profile_locations_constant(self,minimum_x = 1000, maximum_x = 100000,spacing = 1000):
@@ -357,11 +395,13 @@ class channeltoy():
         self.K_data = np.concatenate((self.K_data,K_vals[1:]),axis=None)
         self.A_data = np.concatenate((new_A[:-1],A_vals),axis=None)
 
-        print(self.x_data)
-        print(self.z_data)
-        print(self.U_data)
-        print(self.K_data)
-        print(self.A_data)
+        self.chi_data = self.calculate_chi()
+
+        #print(self.x_data)
+        #print(self.z_data)
+        #print(self.U_data)
+        #print(self.K_data)
+        #print(self.A_data)
 
 
     def create_drainage_capture_channel(self, new_K = 0.000005, new_U = 0.0001, new_max_x = 100000,new_spacing = 1000, new_X_0 = 10000, new_rho = 1.8, capture_location_fraction = 0.5):
@@ -584,18 +624,19 @@ class channeltoy():
         for t in t_ime:
             elev = self.solve_timestep(base_level= base_level,dt = dt)
             if t%print_interval == 0:
-                print("Time is: "+str(t))
-                print("Elevation is ")
-                print(elev)
+                print("\nSaving this timestep: "+str(t))
+                #print("Elevation is ")
+                #print(elev)
                 times.append(t)
                 elevations.append(elev)
             if t%5000 == 0:
-                print("Time is: "+str(t))
+                print("\r", end='')
+                print("Time is: "+str(t),end=' ', flush=True)
 
         return times,elevations
 
 
-    def plot_transient_channel(self,show_figure = False, print_to_file = True, filename = "transient_channel_profile.png", times = [], elevations = [], initial_elevation = [], final_elevation =[]):
+    def plot_transient_channel(self,show_figure = False, print_to_file = True, filename = "transient_channel_profile.png", times = [], elevations = [], initial_elevation = [], final_elevation =[], use_chi = False):
         """This prints the channel profile
         Args:
             show_figure (bool): If true, show figure
@@ -612,30 +653,36 @@ class channeltoy():
             18/08/2020
         """
 
-        x_loc = self.x_data
+        if use_chi:
+            x_loc = self.chi_data
+        else:
+            x_loc = self.x_data
 
         fig, ax = plt.subplots()
         if not final_elevation == []:
             #print("Plotting final elevation")
             #print(final_elevation)
-            ax.plot(self.x_data, final_elevation, label="Final steady state profile")
+            ax.plot(x_loc, final_elevation, label="Final steady state profile")
 
         if not initial_elevation == []:
             #print("Plotting initial elevation")
             #print(initial_elevation)
-            ax.plot(self.x_data, initial_elevation, label="Initial profile")
+            ax.plot(x_loc, initial_elevation, label="Initial profile")
 
         for i, t in enumerate(times):
-            print("Time is: "+str(t))
+            #print("Time is: "+str(t))
             #print("Elevation is:")
             #print(elevations[i])
-            ax.plot(self.x_data, elevations[i], label="Time = "+str(t))
+            ax.plot(x_loc, elevations[i], label="Time = "+str(t))
 
 
 
         plt.legend(loc='upper left')
-        ax.set(xlabel='distance from outlet (m)', ylabel='elevation (m)',
-           title='Channel profile')
+        if use_chi:
+            ax.set(xlabel='$\chi$ (m)', ylabel='elevation (m)',title='Channel profile')
+        else:
+            ax.set(xlabel='distance from outlet (m)', ylabel='elevation (m)',title='Channel profile')
+
         ax.grid()
         ax = axis_styler(ax,axis_style="Normal")
 
@@ -646,7 +693,7 @@ class channeltoy():
             plt.show()
 
 
-    def plot_ss_channel(self,show_figure = False, print_to_file = True, filename = "channel_profile.png"):
+    def plot_ss_channel(self,show_figure = False, print_to_file = True, filename = "channel_profile.png",show_area = False, use_chi = False):
         """This prints the channel profile
         Args:
             show_figure (bool): If true, show figure
@@ -666,10 +713,27 @@ class channeltoy():
         self.solve_steady_state_elevation()
 
         fig, ax = plt.subplots()
-        ax.plot(self.x_data, self.z_data)
 
-        ax.set(xlabel='distance from outlet (m)', ylabel='elevation (m)',
-           title='Channel profile')
+        if use_chi:
+            x_loc = self.chi_data
+        else:
+            x_loc = self.x_data
+
+        ax.plot(x_loc, self.z_data)
+
+        if use_chi:
+            ax.set(xlabel='$\chi$ (m)', ylabel='elevation (m)',title='Channel profile')
+        else:
+            ax.set(xlabel='distance from outlet (m)', ylabel='elevation (m)',title='Channel profile')
+
+        if show_area:
+            #print("A data is:")
+            #print(self.A_data)
+
+            ax_A = ax.twinx()
+            ax_A.fill_between(x_loc, self.A_data, facecolor = "r",alpha=0.3, zorder=-1)
+            ax_A.set_ylabel(r'Drainage area, m$^2$')
+
         ax.grid()
         ax = axis_styler(ax,axis_style="Normal")
 
@@ -679,7 +743,7 @@ class channeltoy():
         if show_figure:
             plt.show()
 
-    def plot_channel(self,show_figure = False, print_to_file = True, filename = "channel_profile.png", show_area = False):
+    def plot_channel(self,show_figure = False, print_to_file = True, filename = "channel_profile.png", show_area = False, use_chi = False):
         """This prints the channel profile
         Args:
             show_figure (bool): If true, show figure
@@ -697,19 +761,26 @@ class channeltoy():
         """
 
         fig, ax = plt.subplots()
-        ax.plot(self.x_data, self.z_data)
+
+        if use_chi:
+            x_loc = self.chi_data
+        else:
+            x_loc = self.x_data
+
+        ax.plot(x_loc, self.z_data)
 
 
-
-        ax.set(xlabel='distance from outlet (m)', ylabel='elevation (m)',
-           title='Channel profile')
+        if use_chi:
+            ax.set(xlabel='$\chi$ (m)', ylabel='elevation (m)',title='Channel profile')
+        else:
+            ax.set(xlabel='distance from outlet (m)', ylabel='elevation (m)',title='Channel profile')
 
         if show_area:
             #print("A data is:")
             #print(self.A_data)
 
             ax_A = ax.twinx()
-            ax_A.fill_between(self.x_data, self.A_data, facecolor = "r",alpha=0.3, zorder=-1)
+            ax_A.fill_between(x_loc, self.A_data, facecolor = "r",alpha=0.3, zorder=-1)
             ax_A.set_ylabel(r'Drainage area, m$^2$')
 
         ax.grid()
