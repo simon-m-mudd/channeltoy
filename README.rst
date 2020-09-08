@@ -3,28 +3,28 @@ channeltoy
 ============
 
 
-.. image:: https://img.shields.io/pypi/v/hillslopetoy.svg
-        :target: https://pypi.python.org/pypi/hillslopetoy
+.. image:: https://img.shields.io/pypi/v/channeltoy.svg
+        :target: https://pypi.python.org/pypi/channeltoy
 
-.. image:: https://img.shields.io/travis/simon-m-mudd/hillslopetoy.svg
-        :target: https://travis-ci.com/simon-m-mudd/hillslopetoy
+.. image:: https://img.shields.io/travis/simon-m-mudd/channeltoy.svg
+        :target: https://travis-ci.com/simon-m-mudd/channeltoy
 
-.. image:: https://readthedocs.org/projects/hillslopetoy/badge/?version=latest
-        :target: https://hillslopetoy.readthedocs.io/en/latest/?badge=latest
+.. image:: https://readthedocs.org/projects/channeltoy/badge/?version=latest
+        :target: https://channeltoy.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
 
-.. image:: https://pyup.io/repos/github/simon-m-mudd/hillslopetoy/shield.svg
-     :target: https://pyup.io/repos/github/simon-m-mudd/hillslopetoy/
+.. image:: https://pyup.io/repos/github/simon-m-mudd/channeltoy/shield.svg
+     :target: https://pyup.io/repos/github/simon-m-mudd/channeltoy/
      :alt: Updates
 
 
 
-A collection of tools for exploring hillslope evolution.
+A collection of tools for exploring channel evolution.
 
 
 * Free software: MIT license
-* Documentation: https://hillslopetoy.readthedocs.io.
+* Documentation: https://channeltoy.readthedocs.io.
 
 
 Features
